@@ -1,0 +1,642 @@
+% Algorithms Notes (C) by Stefan Vargyas
+% 
+% This file is part of Algorithm Notes.
+% 
+% Algorithms Notes is licensed under a
+% Creative Commons Attribution 4.0 Unported
+% License.
+% 
+% You should have received a copy of the
+% license along with this work.  If not, see
+% <http://creativecommons.org/licenses/by/4.0/>.
+
+\documentclass[a4paper,9pt,leqno]{article}
+\usepackage[hang]{footmisc}
+\usepackage[fleqn]{amsmath}
+\usepackage{listings}
+\usepackage{relsize}
+\usepackage{tocloft}
+\usepackage{quoting}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{suffix}
+\usepackage{ifpdf}
+\usepackage{calc}
+\usepackage{url}
+
+\ifpdf
+\pdfinfo{
+/Title(A String Minimum Deletions Problem)
+/Author(Stefan Vargyas, stvar@yahoo.com)
+/Creator(LaTeX)
+}
+\fi
+
+\newcommand{\vargyas}{\c{S}tefan Vargyas}
+
+\renewcommand{\ttdefault}{pcr}
+\renewcommand{\familydefault}{\sfdefault}
+
+\addtolength{\textheight}{3.4cm}
+\addtolength{\topmargin}{-2.1cm}
+\addtolength{\textwidth}{3cm}
+\addtolength{\evensidemargin}{-1.5cm}
+\addtolength{\oddsidemargin}{-1.5cm}
+
+\renewcommand{\=}{\protect\nobreakdash-\hspace{0pt}}
+\renewcommand{\~}{\protect\nobreakdash--\hspace{0pt}}
+
+\setlength{\parindent}{0pt}
+
+\newcommand{\plusplus}{\textbf{\raisebox{1pt}{++}}}
+\newcommand{\cplusplus}{C\plusplus}
+\newcommand{\python}{Python}
+
+\newcommand{\ie}{i.e.}
+\newcommand{\code}[1]{{\tt{#1}}}
+
+\newcommand{\textpar}{%
+    \par\noindent\newline}
+
+\makeatletter
+% stev: alter the definition of key 'numbers':
+\lst@Key{showskiplines}f[f]{%
+    \lstKV@SetIf{#1}\lst@ifshowskiplines}
+\let\lst@ifskiplines\iffalse
+\newcommand\skipnumbering[1]{%
+    \setcounter{lstnumber}{\numexpr#1-1\relax}%
+    \let\lst@ifskiplines\iftrue
+    \\\lst@PlaceNumber
+    \let\lst@ifskiplines\iffalse
+    \lst@ifshowskiplines...\fi
+}
+\def\lst@renderskiplinessymbol{{%
+    \relsize{1}%
+    \lst@skiplinessymbol
+    \hspace{-.11em}}%
+}
+\def\lst@numberorsymbol{
+    \lst@ifskiplines
+    \makebox[\widthof{\lst@renderskiplinessymbol}+.11em][l]{%
+        \lst@renderskiplinessymbol}%
+    \else
+    \thelstnumber
+    \fi
+}
+\def\lst@defskiplinessymbol{%
+    \textbf{.\hspace{.11em}.\hspace{.11em}.}}
+\def\lst@skiplinessymbol{}
+\lst@Key{skiplinessymbol}{%
+    \lst@defskiplinessymbol}{%
+    \def\lst@skiplinessymbol{#1}}
+\lst@Key{numbers}{none}{%
+    \let\lst@PlaceNumber\@empty
+    \lstKV@SwitchCases{#1}{%
+        none&\\%
+        left&\def\lst@PlaceNumber{%
+            \llap{%
+                \normalfont
+                \lst@numberstyle{\lst@numberorsymbol}%
+                \kern\lst@numbersep}}\\%
+        right&\def\lst@PlaceNumber{%
+            \rlap{%
+                \normalfont
+                \kern\linewidth \kern\lst@numbersep
+                \lst@numberstyle{\lst@numberorsymbol}}}%
+    }{%
+        \PackageError{Listings}{Numbers #1 unknown}\@ehc
+    }%
+}
+\makeatother
+
+% http://www.bollchen.de/blog/2011/04/good-looking-line-breaks-with-the-listings-package/
+\newcommand{\shellprebreak}{%
+    \raisebox{0ex}[0ex][0ex]{%
+        \ensuremath{\hookleftarrow}}}
+\newcommand{\shellpostbreak}{%
+    \raisebox{0ex}[0ex][0ex]{%
+        \ensuremath{\hookrightarrow}\hspace{2pt}}}
+\newcommand{\srcprebreak}{%
+    \shellprebreak}
+\newcommand{\srcpostbreak}{%
+    \shellpostbreak}
+
+\newlength\shelllinewidth
+\setlength\shelllinewidth{1.35\linewidth}
+
+\newcommand{\shellskipamount}{%
+    \baselineskip}
+\newcommand{\shellinnerskipamount}{%
+    2\parskip}
+\newcommand{\shellafterskipamount}{%
+    \parskip}
+\newcommand{\shellafterskip}{%
+    \addvspace{-\shellafterskipamount}}%
+\newcommand{\srcskipamount}{%
+    \shellskipamount}
+\newcommand{\srcafterskipamount}{%
+    \shellafterskipamount}
+\newcommand{\srcafterskip}{%
+    \addvspace{-\srcafterskipamount}}%
+
+\lstdefinestyle{srclistingstyle}{%
+    numbers=left,
+    numbersep=1.3em,
+    numberstyle=\tiny,
+    showstringspaces=false,
+    basicstyle=\smaller\ttfamily,
+    breakindent=0pt,breakautoindent=false,
+    breaklines=true,breakatwhitespace=true,
+    linewidth=\shelllinewidth,lineskip=1.05pt,
+    abovecaptionskip=0pt,
+    belowcaptionskip=0pt,
+    %!!!aboveskip=\srcskipamount,
+    %!!!belowskip=\srcskipamount,
+    postbreak=\srcpostbreak,
+    prebreak=\srcprebreak,
+    emphstyle=\textbf,
+}
+\lstdefinestyle{cpplistingstyle}{%
+    style=srclistingstyle,
+    language=[GNU]C++,
+    tabsize=4,
+    emph={
+        alignas,
+        alignof,
+        auto,
+        decltype,
+        nullptr,
+        constexpr,
+        final,
+        override,
+        static_assert,
+        noexcept,
+        __func__,
+        __FILE__,
+        __LINE__,
+        __VA_ARGS__,
+    },
+}
+\lstnewenvironment{cpplisting}{%
+    \lstset{style=cpplistingstyle}%
+}{}
+
+\lstdefinestyle{pylistingstyle}{%
+    style=srclistingstyle,
+    language=Python,
+    tabsize=4,
+}
+\lstnewenvironment{pylisting}{%
+    \lstset{style=pylistingstyle}%
+}{}
+
+\swapnumbers
+\theoremstyle{plain}
+\newtheorem{fact}{Fact}
+\newtheorem{axioms}[fact]{Axioms}
+\newtheorem{proposition}[fact]{Proposition}
+\newtheorem{theorem}[fact]{Theorem}
+\theoremstyle{definition}
+\newtheorem{definition}[fact]{Definition}
+\newtheorem{notation}[fact]{Notation}
+\theoremstyle{remark}
+\newtheorem{remark}[fact]{Remark}
+
+\newcommand{\floor}[1]{\lfloor#1\rfloor}
+\newcommand{\ceil}[1]{\lceil#1\rceil}
+\newcommand{\rimpl}{\:\:\Longleftarrow\:\:}
+\newcommand{\impll}{\:\:\Longrightarrow\:\:}
+\newcommand{\impl}{\impll}%!!!{\:\:\Rightarrow\:\:}
+\newcommand{\iffl}{\:\:\Longleftrightarrow\:\:}
+\newcommand{\qimpl}{``$\Rightarrow$''}
+\newcommand{\qrimpl}{``$\Leftarrow$''}
+
+\newcommand{\parref}[1]{(\ref{#1})}
+\newcommand{\by}[1]{{#1}}
+\newcommand{\bydef}{\by{def}}
+\newcommand{\bynot}{\by{not}}
+\newcommand{\byhyp}{\by{hyp}}
+\newcommand{\symby}[2]{\stackrel{#1}{{#2}}}
+\newcommand{\symbyrm}[2]{\symby{{\rm\scriptstyle{#1}}}{#2}}
+\newcommand{\symbyit}[2]{\symby{{\mit\scriptstyle{#1}}}{#2}}
+\newcommand{\implby}[1]{\symbyrm{#1}{\impll}}
+\newcommand{\implbyref}[1]{\implby{\parref{#1}}}
+\newcommand{\implbyhyp}{\implby{\byhyp}}
+\newcommand{\iffby}[1]{\symbyrm{#1}{\iffl}}
+\newcommand{\iffbydef}{\iffby{\bydef}}
+\newcommand{\iffbyref}[1]{\iffby{\parref{#1}}}
+\newcommand{\eqby}[1]{\symbyrm{#1}{=}}
+\newcommand{\eqbydef}{\eqby{\bydef}}
+\newcommand{\eqbyref}[1]{\eqby{\parref{#1}}}
+\newcommand{\eqbyhyp}{\eqby{\byhyp}}
+\newcommand{\eqbynot}{\eqby{\bynot}}
+\newcommand{\leby}[1]{\symbyrm{#1}{\le}}
+\newcommand{\lebyref}[1]{\leby{\parref{#1}}}
+\newcommand{\lebyhyp}{\leby{\byhyp}}
+\newcommand{\geby}[1]{\symbyrm{#1}{\geq}}
+\newcommand{\gebyref}[1]{\geby{\parref{#1}}}
+\newcommand{\gebyhyp}{\geby{\byhyp}}
+\newcommand{\gt}{>}
+\newcommand{\gtby}[1]{\symbyrm{#1}{\gt}}
+\newcommand{\gtbyref}[1]{\gtby{\parref{#1}}}
+\newcommand{\gtbyhyp}{\gtby{\byhyp}}
+\newcommand{\lt}{<}
+\newcommand{\ltby}[1]{\symbyrm{#1}{\lt}}
+\newcommand{\ltbyref}[1]{\ltby{\parref{#1}}}
+\newcommand{\ltbyhyp}{\ltby{\byhyp}}
+\newcommand{\inby}[1]{\symbyrm{#1}{\in}}
+\newcommand{\inbydef}{\inby{\bydef}}
+\newcommand{\inbyref}[1]{\inby{\parref{#1}}}
+\newcommand{\inbyhyp}{\inby{\byhyp}}
+\newcommand{\inbynot}{\inby{\bynot}}
+\newcommand{\sseteqby}[1]{\symbyrm{#1}{\subseteq}}
+\newcommand{\sseteqbydef}{\sseteqby{\bydef}}
+\newcommand{\sseteqbyref}[1]{\sseteqby{\parref{#1}}}
+\newcommand{\sseteqbyhyp}{\sseteqby{\byhyp}}
+\newcommand{\sseteqbynot}{\sseteqby{\bynot}}
+
+\newcommand{\set}[2]{\lc #1 \thickspace|\thickspace #2 \rc}
+\newcommand{\minset}[2]{\min\set{#1}{#2}}
+\newcommand{\txt}[1]{\:\text{#1}\:}
+
+\newcommand{\mc}{,\:}
+\newcommand{\ms}{\:}
+\newcommand{\mcbs}{\mc\;\;}
+\newcommand{\mcss}{\mc\;}
+
+\newcommand{\lp}{\left(}
+\newcommand{\lb}{\left[}
+\newcommand{\lc}{\left\{}
+\newcommand{\rp}{\right)}
+\newcommand{\rb}{\right]}
+\newcommand{\rc}{\right\}}
+\newcommand{\la}{\left\langle}
+\newcommand{\ra}{\right\rangle}
+
+\newcommand\lnref[1]{line \lnref*{#1}}
+\WithSuffix
+\newcommand\lnref*[1]{\#\ref{#1}}
+\newcommand\lnrefs[2]{lines \lnrefs*{#1}{#2}}
+\WithSuffix
+\newcommand\lnrefs*[2]{\lnref*{#1}\~\lnref*{#2}}
+
+\newcommand{\factref}[1]{fact \ref{#1}}
+\newcommand{\Factref}[1]{Fact \ref{#1}}
+
+\newcommand\Nat{\mathbb{N}}
+\WithSuffix
+\newcommand\Nat*{\mathbb{N}^*}
+
+\newcommand\Int{\mathbb{Z}}
+\WithSuffix
+\newcommand\Int*{\mathbb{Z}^*}
+
+\newcommand\Real{\mathbb{R}}
+\WithSuffix
+\newcommand\Real*{\mathbb{R}^*}
+
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+\title{A String Minimum Deletetions Problem}
+\author{\larger\vargyas\medskip\\ \tt\textbf{stvar@yahoo.com}}
+\date{Jun 17, 2021}
+
+% http://tex.stackexchange.com/questions/236781/align-the-footnote-markers-to-the-right-in-footnotes/236802#236802
+\makeatletter
+\patchcmd{\@makefntext}
+    {\@makefnmark\hss}
+    {\hss\@makefnmark\hspace{4pt}}
+    {}{}
+\makeatletter
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{The Problem Definition and Its Solution}
+
+The string minimum deletions problem to which this note refers
+to is defined as follows:
+
+\begin{quoting}
+Given a non-empty sequence of characters, where each character
+is allowed to be one of the two letters $A$ or $B$, do find the
+minimum number of character deletions that makes the given
+sequence become of form $A^\ast\! B^\ast$.
+\end{quoting}
+
+The algorithm that solves this problem is very simple, as shown
+by the following \cplusplus\ and \python\ implementations:
+
+\medskip
+
+\begin{cpplisting}
+size_t min_del(const std::string& S)
+{
+    size_t m = 0, b = 0;
+    for (auto c : S) {
+        if (c == 'A')
+            m = std::min(m + 1, b);
+        else
+            b ++;
+    }
+    return m;
+}
+\end{cpplisting}
+
+\begin{pylisting}
+def min_del(S)
+    m, b = 0, 0
+    for c in S:
+        if c == 'A':
+            m = min(m + 1, b)
+        else:
+            b += 1
+    return m
+\end{pylisting}
+
+\break
+
+\section{Mathematical Proof of the Algorithm's Correctness}
+
+\begin{definition}
+\begin{equation}
+s\in\lc A, B\rc^\ast \txt{is {\it valid}} \iffbydef
+\exists\ms n, m\in\Nat \txt{such that} s = A^n B^m. \label{defvalid}
+\end{equation}
+\end{definition}
+
+\begin{notation}
+
+\begin{align}
+& E : \lc A, B \rc \ \times \lc 0, 1 \rc \to \lc \lambda, A, B \rc \label{defE} \\
+%
+& E \lp x, 0 \rp \eqbydef \lambda\mc 
+  E \lp x, 1 \rp \eqbydef x \nonumber \\
+%
+&  E_n : \lc A, B \rc^n \ \times \lc 0, 1 \rc^n \to \lc A, B \rc^\ast \label{defEn} \\
+%
+&  E_n \lp s, e \rp \eqbydef E \lp s_1, e_1 \rp \cdots E \lp s_n, e_n \rp\mc\txt{for}
+   s \in \lc A, B \rc^n\mc
+   e = \la e_1, \cdots, e_n\ra \in \lc 0, 1 \rc^n \nonumber \\
+%
+& L_n : \lc 0, 1 \rc^n \to \Nat\mc \label{defLn} \\
+%
+& L_n \lp e \rp \eqbydef \neg e_1 + \cdots + \neg e_n\mc\txt{for}
+  e = \la e_1, \cdots, e_n\ra \in \lc 0, 1 \rc^n \nonumber \\
+%
+& \mathcal{L}_n : \lc A, B \rc^n \to \mathcal{P}(\Nat) \label{defLLn}\\
+%
+& \mathcal{L}_n \lp s \rp \eqbydef \set{L_n\lp e\rp}{e \in \lc 0, 1\rc^n
+    \txt{and} E_n \lp s, e \rp \txt{is valid}} \nonumber \\
+%
+& M_n : \lc A, B \rc^n \to \Nat \label{defMn} \\
+%
+& M_n \lp s \rp \eqbydef \min\mathcal{L}_n\lp s\rp \nonumber \\
+%
+& \sharp : \lc A, B \rc^\ast \times \lc A, B \rc \to \Nat \label{defsharp} \\
+%
+& \sharp\lp s, x\rp \eqbydef \txt{the number of occurrences of} x \txt{in} s \nonumber
+\end{align}
+
+\end{notation}
+
+\begin{remark}
+For $m \in\Nat$ and $\phi \ne X \in \mathcal{P}\lp\Nat\rp$,
+$m = \min X$ if and only if:
+\begin{align}
+& m \in X \label{minin} \txt{and} \\
+& m \le x, \txt{for all} x \in X \label{minle}
+\end{align}
+\end{remark}
+
+\begin{proposition}
+For all $X, Y \in \mathcal{P}\lp\Nat\rp$ and $a \in \Nat$, we have that:
+%
+\begin{align}
+& \phi \ne X \subseteq Y \impl \min X \ge \min Y \label{minXgeY} \\
+& \min X + \min Y = \min X + Y\mc \label{minXplusY}
+  \txt{where} X + Y \eqbydef \set{x + y}{x \in X\mc y \in Y} \in \mathcal{P}\lp\Nat\rp \\
+& a + \min X = \min \lp a + X\rp\mc \label{minaplusX}
+\end{align}
+\end{proposition}
+
+\begin{proof}
+For \parref{minXgeY}, we have that:
+%
+\begin{equation*}
+\min X \inbyref{minin} X
+    \implbyhyp \min X \in Y
+    \implbyref{minle} \min X \ge \min Y
+\end{equation*}
+%
+For \parref{minXplusY}, let $m \eqbynot \min X + \min Y$. On one hand
+we have that \parref{minin} holds for $m$ and $X + Y$:
+%
+\begin{align*}
+\min X \inbyref{minin} X \mc
+\min Y \inbyref{minin} Y \impl
+m = \min X + \min Y \in X + Y
+\end{align*}
+%
+On the other hand, \parref{minle} holds for $m$ and $X + Y$:
+\begin{align*}
+z \in X + Y & \impl \exists\ms x \in X, y \in Y \txt{such that} z = x + y \\
+            & \implbyref{minle} \min X \le x \mc \min Y \le y \\
+            & \impl m = \min X + \min Y \le x + y = z
+\end{align*}
+\parref{minaplusX} is true by \parref{minXplusY} taking $Y = \lc a\rc$.
+\end{proof}
+
+\begin{proposition}
+For all $s \in \lc A, B\rc^n$ and $x \in\lc A, B\rc$,
+we have that:
+%
+\begin{align}
+\mathcal{L}_n \lp s \rp & \subseteq \mathcal{L}_{n+1} \lp s B\rp
+    \label{LLnsubseteqLLnplus1} \\
+M_n \lp s \rp & \ge M_{n+1} \lp s B\rp
+    \label{MngeMnplus1} \\
+M_n \lp s \rp & \le M_{n+1} \lp s x\rp
+    \label{MnleMnplus1}
+\end{align}
+\end{proposition}
+
+\begin{proof}
+For \parref{LLnsubseteqLLnplus1}, we have that, for an arbitrary $l$:
+%
+\begin{align*}
+l \in \mathcal{L}_n \lp s \rp 
+\implbyref{defLLn} & \exists\ms e \in \lc 0, 1 \rc^n \txt{such that}
+    E_n \lp s\mc e \rp \txt{is valid and} L_n \lp e \rp = l \\
+\impl & \exists\ms e'\eqbydef \la e_1\mc\cdots\mc e_n\mc 1\ra \in \lc 0, 1 \rc^{n+1} \txt{such that} \\
+& \begin{array}{l}
+    E_{n+1} \lp s B\mc e' \rp
+      \eqbyref{defEn} E_n \lp s\mc e \rp E\lp B, e'_{n+1} \rp
+      \eqbyref{defE} E_n \lp s\mc e \rp B \\
+    L_{n+1} \lp e' \rp \eqbyref{defLn} L_n \lp e \rp + \neg e'_{n+1} = L_n \lp e\rp = l
+  \end{array} \\
+\impl & \exists\ms e'\in \lc 0, 1 \rc^{n+1} \txt{such that}
+  E_{n+1} \lp s B\mc e' \rp \txt{is valid and}
+  L_{n+1} \lp e' \rp = l \\
+\implbyref{defLLn} & l \in \mathcal{L}_{n+1} \lp s B \rp
+\end{align*}
+%
+\parref{MngeMnplus1} follows then from \parref{LLnsubseteqLLnplus1} and
+\parref{minXgeY}.
+\textpar
+For \parref{MnleMnplus1}, let $x\in\lc A, B\rc$ be arbitrary; we have that:
+%
+\begin{align*}
+m \eqbynot M_{n+1} \lp s x \rp 
+\implbyref{minin} & m \in \mathcal{L}_{n+1} \lp s x \rp \\
+\implbyref{defLLn} & \exists\ms e \in \lc 0, 1 \rc^{n+1} \txt{such that}
+    E_{n+1} \lp s x\mc e \rp \txt{is valid and} L_{n+1} \lp e \rp = m \\
+\impl & \exists\ms e'\eqbydef \la e_1\mc\cdots\mc e_n\ra \in \lc 0, 1 \rc^n \txt{such that} \\
+& \begin{array}{l}
+    E_{n+1} \lp s x\mc e \rp
+      \eqbyref{defEn} E_n \lp s\mc e' \rp E\lp x, e_{n+1} \rp \\
+    L_{n+1} \lp e \rp \eqbyref{defLn} L_n \lp e' \rp + \neg e_n \ge L_n \lp e'\rp
+  \end{array} \\
+\implbyref{defvalid} & \exists\ms e'\in \lc 0, 1 \rc^n \txt{such that}
+  E_n \lp s\mc e' \rp \txt{is valid and}
+  L_n \lp e' \rp \le m \\
+\implbyref{defLLn} & \exists\ms l\in \mathcal{L}_n \lp s \rp
+  \txt{such that} m \ge l \\
+\implbyref{minle} & m \ge \min\mathcal{L}_n \lp s \rp
+  \eqbyref{defMn} M_n \lp s \rp
+\end{align*}
+%
+\end{proof}
+
+\begin{proposition}
+For all $s \in \lc A, B\rc^n$ and $x \in \lc A, B\rc$, we have that:
+%
+\begin{align}
+\mathcal{L}_{n+1} \lp s x \rp & \supseteq \mathcal{L}_n \lp s\rp + 1
+    \label{LLnsupseteqLLnplus1} \\
+M_{n+1} \lp s x \rp & \le M_n \lp s \rp + 1
+    \label{Mnplus1geMnplus1} \\
+\mathcal{L}_{n+1}\lp s A\rp & \ni\sharp\lp s\mc B\rp
+    \label{sharpin}\\
+M_{n+1}\lp s A \rp & \le \sharp\lp s\mc B\rp
+    \label{Mnplus1lesharp} \\
+M_{n+1}\lp s A \rp & \ge M_n\lp s \rp + 1 \txt{or}
+    \label{Mnplus1geMnorsharp} \\
+M_{n+1}\lp s A \rp & \ge \sharp\lp s\mc B\rp \nonumber
+\end{align}
+\end{proposition}
+
+\begin{proof}
+For \parref{LLnsupseteqLLnplus1}, we have that, for an arbitrary $l$:
+%
+\begin{align*}
+l \in \mathcal{L}_n \lp s \rp + 1
+\implbyref{defLLn} & \exists\ms e \in \lc 0, 1 \rc^n \txt{such that}
+    E_n \lp s\mc e \rp \txt{is valid and} l = L_n \lp e \rp + 1 \\
+\impl & \exists\ms e'\eqbydef \la e_1\mc\cdots\mc e_n\mc 0\ra \in \lc 0, 1 \rc^{n+1} \txt{such that} \\
+& \begin{array}{l}
+    E_{n+1} \lp s x\mc e' \rp
+      \eqbyref{defEn} E_n \lp s\mc e \rp E\lp x, e'_{n+1} \rp
+      \eqbyref{defE} E_n \lp s\mc e \rp \\
+    L_{n+1} \lp e' \rp \eqbyref{defLn} L_n \lp e \rp + \neg e'_{n+1} = L_n \lp e\rp + 1 = l
+  \end{array} \\
+\impl & \exists\ms e'\in \lc 0, 1 \rc^{n+1} \txt{such that}
+  E_{n+1} \lp s x\mc e' \rp \txt{is valid and}
+  L_{n+1} \lp e' \rp = l \\
+\implbyref{defLLn} & l \in \mathcal{L}_{n+1} \lp s x \rp
+\end{align*}
+%
+\parref{Mnplus1geMnplus1} follows then from \parref{LLnsupseteqLLnplus1} and
+\parref{minXgeY}.
+\textpar
+For \parref{sharpin}, let have $e \in\lc 0, 1\rc^{n+1}$ such that it
+deletes all $B$s from $s A$. Then, we have that:
+%
+\begin{align*}
+L_{n+1}\lp e\rp = \sharp\lp s A\mc B\rp = \sharp\lp s\mc B\rp
+\end{align*}
+Consequently, by \parref{defLLn}, we obtain \parref{sharpin}.
+\textpar
+For \parref{Mnplus1lesharp}, apply \parref{sharpin}, \parref{minle} and \parref{defMn}. 
+\textpar
+For \parref{Mnplus1geMnorsharp}, taking $l$ arbitrarily, we have that:
+%
+\begin{align*}
+l \in \mathcal{L}_{n+1}\lp s\rp
+  \implbyref{defLLn} \exists\ms e\in\lc 0, 1\rc^{n+1} \txt{such that}
+    & E_{n+1}\lp s A\mc e\rp \txt{is valid and} \\
+    & L_{n+1}\lp e\rp = l
+\end{align*}
+%
+Let $e' \eqbynot \la e_1\mc\cdots\mc e_n\ra\in\lc 0, 1\rc^n$.
+In case $e_{n+1} = 0$:
+%
+\begin{align*}
+& E_{n+1}\lp s A\mc e\rp \eqbyref{defEn} E_n\lp s A\mc e\rp\mc
+  L_{n+1}\lp e\rp \eqbyref{defLn} L_n\lp e'\rp + \neg e_{n+1} = L_n\lp e'\rp + 1\\
+& \implbyref{defLLn} l \in \mathcal{L}_n\lp s\rp + 1
+  \implbyref{minle} l \ge \min\mathcal{L}_n\lp s\rp + 1 \eqbyref{defMn} M_n\lp s\rp + 1
+\end{align*}
+%
+In case $e_{n+1} = 1$:
+%
+\begin{align*}
+& E_{n+1}\lp s A\mc e\rp \eqbyref{defEn} E_n\lp s A\mc e\rp A\mc
+  L_{n+1}\lp e\rp \eqbyref{defLn} L_n\lp e'\rp + \neg e_{n+1} = L_n\lp e'\rp \\
+& \implbyref{defvalid} E_n\lp s\mc e'\rp \txt{does not contain} B\txt{s}
+  \implbyref{minle} l \ge \sharp\lp s\mc B\rp
+\end{align*}
+%
+Consequently:
+\begin{align*}
+l \in \mathcal{L}_{n+1}\lp s\rp
+  \impl l \ge M_n\lp s\rp + 1 \txt{or}
+        l \ge \sharp\lp s\mc B\rp
+\end{align*}
+%
+Due to the arbitrareness of $l$, by \parref{defMn}, the last implication above
+proves \parref{Mnplus1geMnorsharp}.
+%
+\end{proof}
+
+\begin{fact}
+For all $s \in \lc A, B \rc^n$, we have that:
+\begin{align}
+M_{n+1}\lp s A\rp & = \min\lc\ms M_n\lp s \rp + 1\mc \sharp\lp s \mc B \rp\ms\rc
+    \label{Mnplus1eqminMnplus1} \\
+M_{n+1}\lp s B\rp & = M_n\lp s \rp
+    \label{Mnplus1eqMn}
+\end{align}
+\end{fact}
+
+\begin{proof}
+%
+For \parref{Mnplus1eqminMnplus1}, apply
+\parref{Mnplus1geMnplus1},
+\parref{Mnplus1lesharp} and
+\parref{Mnplus1geMnorsharp}.
+\textpar
+For \parref{Mnplus1eqMn}, apply
+\parref{MngeMnplus1} and
+\parref{MnleMnplus1}.
+%
+\end{proof}
+
+%
+\let\thefootnote\relax%
+\footnotetext{%
+Algorithms Notes \copyright\ by \textbf{\vargyas}
+
+Algorithms Notes is licensed under a
+Creative Commons Attribution 4.0 Unported
+License.
+
+You should have received a copy of the
+license along with this work.  If not, see
+\url{http://creativecommons.org/licenses/by/4.0/}.}
+%
+\end{document}
+
